@@ -1,11 +1,8 @@
 import numpy as np
-from collections import deque
-import copy
 import Forward_elimination
 
 class gauss:
-    def __init__(self,n):
-        
+    def __init__(self,n):     
         self.array=n
         self.answer=np.zeros(len(self.array),dtype=float)
         self.factors=np.zeros(len(self.array),dtype=float)
@@ -55,8 +52,6 @@ class gauss:
         else:
             self.array=arr  
             return arr
-m1=gauss(np.array([[1,2,2,3],[5,5,2,5],[3,4,6,7]],dtype=float))
-print(m1.Gauss())
 
 
 
