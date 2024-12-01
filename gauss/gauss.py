@@ -2,60 +2,130 @@ import numpy as np
 import Forward_elimination
 
 class gauss:
-    def __init__(self,n):     
-        self.array=n
-        self.answer=np.zeros(len(self.array),dtype=float)
-        self.factors=np.zeros(len(self.array),dtype=float)
-        self.scalers=self.scaling()
-        self.eliminator=Forward_elimination.forward_eliminator(self.array,self.scalers)
-
-    
-    def scaling(self):
-        arr = self.array
-        self.scalers = [0]*len(arr)
+    def __init__(self, n, b):
+        self.array = np.zeros((len(n), len(n)+1))
+        for i in range(len(n)):
+            for j in range(len(n)):
+                self.array[i][j] = n[i][j]
+        for i in range(len(n)):
+            self.array[i][len(n)] = b[i]
         
-        for i in range(len(arr)): 
-            max_val = abs(arr[i][0]) 
+        self.answer = np.zeros(len(self.array), dtype=float)
+        self.scalers = self.scaling()
+        self.eliminator = Forward_elimination.forward_eliminator(self.array, self.scalers)
 
-            for j in range(1, len(arr)): 
+    def gauss_elimination_generator(self):
+        """
+        Generator that yields detailed steps of Gauss elimination process
+        """
+        # Initial augmented matrix
+        yield {
+            'step': 'Initial Augmented Matrix',
+            'matrix': self.array.copy(),
+            'description': 'Starting augmented matrix before elimination'
+        }
+
+        # Scaling step
+        yield {
+            'step': 'Scaling',
+            'scalers': self.scalers,
+            'description': 'Computed row scaling factors'
+        }
+
+        # Elimination process
+        while True:
+            # Perform next elimination step
+            elimination_result = self.eliminator.Forward_Elimination_nextStep()
+            
+            # Check if elimination is complete or failed
+            if elimination_result == -1:
+                yield {
+                    'step': 'Elimination Failed',
+                    'description': 'Unable to continue elimination process'
+                }
+                break
+            
+            # Unpack elimination result
+            flag, updated_matrix = elimination_result
+            
+            # Yield current matrix state
+            yield {
+                'step': 'Elimination Step',
+                'matrix': updated_matrix,
+                'flag': flag,
+                'description': 'Matrix after elimination step'
+            }
+            
+            # If elimination is complete, perform backward substitution
+            if flag:
+                # Backward substitution
+                self.array = updated_matrix
+                final_answer = self.Backward_Substitution()
+                
+                yield {
+                    'step': 'Backward Substitution',
+                    'solution': final_answer,
+                    'description': 'Final solution vector'
+                }
+                break
+
+    def scaling(self):
+        """Compute scaling factors for rows"""
+        arr = self.array
+        scalers = [0] * len(arr)
+        
+        for i in range(len(arr)):
+            max_val = abs(arr[i][0])
+            for j in range(1, len(arr)):
                 if abs(arr[i][j]) > max_val:
                     max_val = abs(arr[i][j])
+            
+            scalers[i] = max_val
         
-            self.scalers[i] = max_val  
-        return self.scalers   
+        return scalers
+
     def Backward_Substitution(self):
-       
-        arr=self.array
-        col=len(arr[0])
-        rows=len(arr)
-        self.answer[rows-1]=arr[rows-1][col-1]/arr[rows-1][rows-1]
-        for i in range(rows-2,-1,-1):
-            sum=0
-            for j in range (i+1,rows):
-                sum+=arr[i][j]*self.answer[j]
-            self.answer[i]=(arr[i][col-1]-sum)/arr[i][i]
-         
-        return self.answer        
+        """Perform backward substitution"""
+        arr = self.array
+        col = len(arr[0])
+        rows = len(arr)
+        
+        self.answer[rows-1] = arr[rows-1][col-1] / arr[rows-1][rows-1]
+        
+        for i in range(rows-2, -1, -1):
+            sum_val = 0
+            for j in range(i+1, rows):
+                sum_val += arr[i][j] * self.answer[j]
+            
+            self.answer[i] = (arr[i][col-1] - sum_val) / arr[i][i]
+        
+        return self.answer
+
     def Gauss(self):
-        if(self.eliminator.Forward_Elimination()!=-1):
-            self.answer=self.Backward_Substitution()
+        """Perform complete Gauss elimination"""
+        if self.eliminator.Forward_Elimination() != -1:
+            self.answer = self.Backward_Substitution()
+            self.factors = self.eliminator.factors
         else:
-            return -1    
-        return np.array(self.answer)    
-    def next_Step(self):
-        ind=self.eliminator.Forward_Elimination_nextStep()
-        if ind==-1:
             return -1
-        flag,arr=ind
-        if flag==True:
-            return self.Backward_Substitution()
-        else:
-            self.array=arr  
-            return arr
+        
+        return np.array(self.answer)
 
+# Example usage
+def main():
+    # Create Gauss elimination object
+    m1 = gauss(
+        np.array([[25,5,1], [64,8,1], [144,12,1]], dtype=float), 
+        np.array([1,2,3], dtype=float)
+    )
+    
+    # Demonstrate generator usage
+    print("Gauss Elimination Steps:")
+    for step in m1.gauss_elimination_generator():
+        print(step)
 
-
-
+if __name__ == "__main__":
+    main()
 
   
 
