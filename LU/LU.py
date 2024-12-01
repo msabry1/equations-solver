@@ -81,6 +81,7 @@ class LU:
         
         # Final U matrix
         self.U = arr.copy()
+
         yield self.U.copy()
     
     def forward_substitution_generator(self):
@@ -107,9 +108,7 @@ class LU:
         
         # Initialize results
         self.F_results[0] = n[0][col-1] / n[0][0]
-       
-        
-        # Compute remaining solutions
+    
         for i in range(1, len(n)):
             sum_val = 0
             for j in range(0, rows):
@@ -161,6 +160,7 @@ class LU:
         return self.results
     
     def get_L(self):
+
         ptr = 0
         for i in range(len(self.array)):
             for j in range(len(self.array)):
@@ -170,22 +170,25 @@ class LU:
                     self.L[j][i] = self.factors[ptr]
                     ptr += 1
         return self.L
+    def getfinal(self):
+        U=0
+        F_res=0
+        results=0
+        for step in self.get_U_generator():
+            print(step)
+            U=step
+        for step in self.forward_substitution_generator():
+            print(step)
+            F_res=step
+        for step in self.backward_substitution_generator():
+            print(step)
+            results=step
+            
+
+        return U,self.L,F_res,results       
+        
 
 def main():
-    m1 = LU(np.array([[25,5,1],[64,8,1],[144,12,1]], dtype=float), [1,1,3])
-    print(m1.solution_type)
-    
-    print("\nU Matrix Decomposition Steps:")
-    for step in m1.get_U_generator():
-        print(step)
-    
-    print("\nForward Substitution Steps:")
-    for step in m1.forward_substitution_generator():
-        print(step)
-    
-    print("\nBackward Substitution Steps:")
-    for step in m1.backward_substitution_generator():
-        print(step)
-
-if __name__ == "__main__":
-    main()
+    m1=LU(np.array([[25,5,1],[64,8,1],[144,12,1]],dtype=float),np.array([1,2,3],dtype=float))
+    print(m1.getfinal())
+main()  
