@@ -1,20 +1,20 @@
 import numpy as np
-import numpy.linalg as la
 class LU:
-    def __init__(self, n, b):
-        self.coefficient_matrix = np.array(n, dtype=float)
-        self.constant_vector = np.array(b, dtype=float)
-        self.array = np.zeros((len(n), len(n)+1))
-        for i in range(len(n)):
-            for j in range(len(n)):
-                self.array[i][j] = n[i][j]
-        for i in range(len(n)):
-            self.array[i][len(n)] = b[i]
-        
-        self.answer = np.zeros(len(self.array), dtype=float)
-        self.scalers = self.scaling()
-        self.solution_type = self.detect_system_type()
-
+    def __init__(self, matrix, B):
+       self.factors = []  # Changed from zeros to list
+       self.tol = 1e-9
+       self.array = matrix.copy()
+       self.coefficient_matrix=matrix.copy()
+       self.constant_vector=B.copy()
+    # Consume the generator and get the scalers
+       scaling_generator = self.scaling()
+       scaling_steps = list(scaling_generator)
+       self.scalers = [step['max_value'] for step in scaling_steps if 'max_value' in step]
+       self.results = B.copy()
+       self.F_results = np.zeros(len(B))
+       self.U = np.zeros((len(self.array), len(self.array)))
+       self.L = np.zeros((len(self.array), len(self.array)))
+       self.solution_type = self.detect_system_type()
     def detect_system_type(self):
         A = self.coefficient_matrix
         Aug = np.column_stack((A, self.constant_vector))
@@ -29,19 +29,18 @@ class LU:
             else:
                 self.solution_type = 'infinite'
                 return 'infinite'
+
         else:
             self.solution_type = 'no solution'
             return 'no solution'
-
+           
     def scaling(self):
         arr = self.array
         scalers = [0] * len(arr)
-
         yield {
         'step': 'Scaling Initialization', 
         'description': 'Starting scaling process'
         }
-
         for i in range(len(arr)):
             max_val = abs(arr[i][0])
             for j in range(1, len(arr)):
@@ -55,15 +54,12 @@ class LU:
             'max_value': max_val,
            'description': f'Maximum value for row {i}'
            }
-
         self.scalers = scalers
         return scalers
-
     def get_U_generator(self):
         if(self.solution_type=='no solution'):
             yield{
                 "error":'there is no solution'
-
             }
             return -1
         if(self.solution_type=='infinite'):
@@ -81,7 +77,6 @@ class LU:
             'matrix': arr.copy(), 
             'description': 'Starting matrix before decomposition'
         }
-
         for k in range(rows):
             # Check pivot
             if abs(arr[k][k] / self.scalers[k]) < self.tol:
@@ -91,7 +86,6 @@ class LU:
                     'description': f'Pivot at row {k} is too small'
                 }
                 return
-
             # Perform elimination
             for i in range(k + 1, rows):
                 factor = arr[i][k] / arr[k][k]
@@ -103,7 +97,6 @@ class LU:
                     'matrix_before': arr.copy(),
                     'description': f'Eliminating element at row {i}, column {k}'
                 }
-
                 for j in range(k, rows):
                     arr[i][j] -= factor * arr[k][j]
                 
@@ -112,7 +105,6 @@ class LU:
                     'matrix': arr.copy(),
                     'description': 'Matrix after performing elimination'
                 }
-
         # Final U matrix
         self.U = arr.copy()
         yield {
@@ -120,7 +112,6 @@ class LU:
             'matrix': self.U.copy(), 
             'description': 'Completed Upper Triangular Matrix'
         }
-
     def scaling(self):
         """Scaling method with generator"""
         arr = self.array
@@ -130,7 +121,6 @@ class LU:
             'step': 'Scaling Initialization', 
             'description': 'Starting scaling process'
         }
-
         for i in range(len(arr)):
             max_val = abs(arr[i][0])
             for j in range(1, len(arr)):
@@ -144,15 +134,12 @@ class LU:
                 'max_value': max_val,
                 'description': f'Maximum value for row {i}'
             }
-
         self.scalers = scalers
         return scalers
-
     def forward_substitution_generator(self):
         if(self.solution_type=='no solution'):
             yield{
                 "error":'there is no solution'
-
             }
             return -1
         if(self.solution_type=='infinite'):
@@ -164,23 +151,19 @@ class LU:
         """Generator for forward substitution"""
         L = self.get_L()
         n = np.zeros((len(self.array), len(self.array) + 1))
-
         # Prepare augmented matrix
         for i in range(len(n)):
             for j in range(len(n)):
                 n[i][j] = L[i][j]
         for i in range(len(n)):
             n[i][len(n)] = self.results[i]
-
         yield {
             'step': 'Initial Augmented Matrix', 
             'matrix': n.copy(),
             'description': 'Augmented matrix for forward substitution'
         }
-
         rows = len(n)
         col = len(n[0])
-
         # Initialize results
         self.F_results[0] = n[0][col-1] / n[0][0]
         
@@ -189,7 +172,6 @@ class LU:
             'value': self.F_results[0],
             'description': 'First value in forward substitution'
         }
-
         # Compute remaining solutions
         for i in range(1, len(n)):
             sum_val = 0
@@ -205,9 +187,7 @@ class LU:
                 'sum': sum_val,
                 'description': 'Computed solution for current row'
             }
-
         return self.F_results
-
     def backward_substitution_generator(self):
         
         if(self.solution_type=='no solution'):
@@ -225,22 +205,18 @@ class LU:
         F_results = self.F_results
         
         n = np.zeros((len(self.array), len(self.array) + 1))
-
         for i in range(len(n)):
             for j in range(len(n)):
                 n[i][j] = U[i][j]
         for i in range(len(n)):
             n[i][len(n)] = F_results[i]
-
         yield {
             'step': 'Initial Augmented Matrix', 
             'matrix': n.copy(),
             'description': 'Augmented matrix for backward substitution'
         }
-
         rows = len(n)
         col = len(n[0])
-
         # Compute last solution
         self.results[rows-1] = n[rows-1][col-1] / n[rows-1][rows-1]
         
@@ -249,7 +225,6 @@ class LU:
             'value': self.results[rows-1],
             'description': 'First solution from the end'
         }
-
         # Compute remaining solutions
         for i in range(rows-2, -1, -1):
             sum_val = 0
@@ -264,9 +239,7 @@ class LU:
                 'sum': sum_val,
                 'description': 'Computed solution for current row'
             }
-
         return self.results
-
     def get_L(self):
         """Compute Lower Triangular Matrix"""
         ptr = 0
@@ -278,10 +251,8 @@ class LU:
                     self.L[j][i] = self.factors[ptr]
                     ptr += 1
         return self.L
-
-
 def main():
-   
+
     m1 = LU(np.array([[25,5,1],[25,5,1],[144,12,1]], dtype=float), [1,1,3])
     print(m1.solution_type)
     print("U Matrix Decomposition Steps:")
@@ -295,7 +266,5 @@ def main():
     print("\nBackward Substitution Steps:")
     for step in m1.backward_substitution_generator():
         print(step)
-        
-
 if __name__ == "__main__":
     main()
