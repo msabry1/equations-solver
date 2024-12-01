@@ -1,21 +1,19 @@
 import numpy as np
-
+import numpy.linalg as la
 class LU:
-    def __init__(self, matrix, B):
-       self.factors = []  # Changed from zeros to list
-       self.tol = 1e-9
-       self.array = matrix.copy()
-
-    # Consume the generator and get the scalers
-       scaling_generator = self.scaling()
-       scaling_steps = list(scaling_generator)
-       self.scalers = [step['max_value'] for step in scaling_steps if 'max_value' in step]
-
-       self.results = B.copy()
-       self.F_results = np.zeros(len(B))
-       self.U = np.zeros((len(self.array), len(self.array)))
-       self.L = np.zeros((len(self.array), len(self.array)))
-       self.solution_type = None
+    def __init__(self, n, b):
+        self.coefficient_matrix = np.array(n, dtype=float)
+        self.constant_vector = np.array(b, dtype=float)
+        self.array = np.zeros((len(n), len(n)+1))
+        for i in range(len(n)):
+            for j in range(len(n)):
+                self.array[i][j] = n[i][j]
+        for i in range(len(n)):
+            self.array[i][len(n)] = b[i]
+        
+        self.answer = np.zeros(len(self.array), dtype=float)
+        self.scalers = self.scaling()
+        self.solution_type = self.detect_system_type()
 
     def detect_system_type(self):
         A = self.coefficient_matrix
@@ -62,13 +60,13 @@ class LU:
         return scalers
 
     def get_U_generator(self):
-        if(self.detect_system_type=='no solution'):
+        if(self.solution_type=='no solution'):
             yield{
                 "error":'there is no solution'
 
             }
             return -1
-        if(self.detect_system_type=='infinite'):
+        if(self.solution_type=='infinite'):
             yield{
                 "error":'there is an infinite number of solution'
                 
@@ -151,13 +149,13 @@ class LU:
         return scalers
 
     def forward_substitution_generator(self):
-        if(self.detect_system_type=='no solution'):
+        if(self.solution_type=='no solution'):
             yield{
                 "error":'there is no solution'
 
             }
             return -1
-        if(self.detect_system_type=='infinite'):
+        if(self.solution_type=='infinite'):
             yield{
                 "error":'there is an infinite number of solution'
                 
@@ -212,12 +210,12 @@ class LU:
 
     def backward_substitution_generator(self):
         
-        if(self.detect_system_type=='no solution'):
+        if(self.solution_type=='no solution'):
             yield{
                 "error":'there is no solution'
             }
             return -1
-        if(self.detect_system_type=='infinite'):
+        if(self.solution_type=='infinite'):
             yield{
                 "error":'there is an infinite number of solution'
                 
@@ -283,7 +281,9 @@ class LU:
 
 
 def main():
-    m1 = LU(np.array([[25,5,1],[25,5,1],[144,12,1]], dtype=float), [1,2,3])
+   
+    m1 = LU(np.array([[25,5,1],[25,5,1],[144,12,1]], dtype=float), [1,1,3])
+    print(m1.solution_type)
     print("U Matrix Decomposition Steps:")
     for step in m1.get_U_generator():
         print(step)
@@ -295,6 +295,7 @@ def main():
     print("\nBackward Substitution Steps:")
     for step in m1.backward_substitution_generator():
         print(step)
+        
 
 if __name__ == "__main__":
     main()
