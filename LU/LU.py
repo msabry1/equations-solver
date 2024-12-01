@@ -57,17 +57,19 @@ class LU:
         self.scalers = scalers
         return scalers
     def get_U_generator(self):
+        
         if(self.solution_type=='no solution'):
             yield{
                 "error":'there is no solution'
             }
-            return -1
+            raise Exception("there is no solution")
+      
         if(self.solution_type=='infinite'):
             yield{
                 "error":'there is an infinite number of solution'
                 
             }    
-            return -1
+            raise Exception("there is an infinite number of solution")
         arr = self.array.copy()
         rows = len(arr)
         
@@ -141,14 +143,14 @@ class LU:
             yield{
                 "error":'there is no solution'
             }
-            return -1
+            raise Exception("there is no solution")
+      
         if(self.solution_type=='infinite'):
             yield{
                 "error":'there is an infinite number of solution'
                 
             }    
-            return -1
-        """Generator for forward substitution"""
+            raise Exception("there is an infinite number of solution")
         L = self.get_L()
         n = np.zeros((len(self.array), len(self.array) + 1))
         # Prepare augmented matrix
@@ -194,13 +196,14 @@ class LU:
             yield{
                 "error":'there is no solution'
             }
-            return -1
+            raise Exception("there is no solution")
+      
         if(self.solution_type=='infinite'):
             yield{
                 "error":'there is an infinite number of solution'
                 
             }    
-            return -1
+            raise Exception("there is an infinite number of solution")
         U = self.U
         F_results = self.F_results
         

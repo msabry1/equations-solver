@@ -13,12 +13,44 @@ class gauss:
         self.answer = np.zeros(len(self.array), dtype=float)
         self.scalers = self.scaling()
         self.eliminator = Forward_elimination.forward_eliminator(self.array, self.scalers)
+        self.constant_vector = b.copy()
+        self.coefficient_matrix=n.copy()
+        self.solution_type = self.detect_system_type()
+       
+    def detect_system_type(self):
+        A = self.coefficient_matrix
+        Aug = np.column_stack((A, self.constant_vector))
+        rank_A = np.linalg.matrix_rank(A)
+        rank_Aug = np.linalg.matrix_rank(Aug)
+        n = A.shape[1]
+        
+        if rank_A == rank_Aug:
+            if rank_A == n:
+                self.solution_type = 'unique'
+                return 'unique'
+            else:
+                self.solution_type = 'infinite'
+                return 'infinite'
+
+        else:
+            self.solution_type = 'no solution'
+            return 'no solution'    
 
     def gauss_elimination_generator(self):
-        """
-        Generator that yields detailed steps of Gauss elimination process
-        """
-        # Initial augmented matrix
+        if(self.solution_type=='no solution'):
+            yield{
+                "error":'there is no solution'
+            }
+            raise Exception("there is no solution")
+      
+        if(self.solution_type=='infinite'):
+            yield{
+                "error":'there is an infinite number of solution'
+                
+            }    
+            raise Exception("there is an infinite number of solution")
+      
+       
         yield {
             'step': 'Initial Augmented Matrix',
             'matrix': self.array.copy(),
@@ -115,8 +147,8 @@ class gauss:
 def main():
     # Create Gauss elimination object
     m1 = gauss(
-        np.array([[25,5,1], [64,8,1], [144,12,1]], dtype=float), 
-        np.array([1,2,3], dtype=float)
+        np.array([[25,5,1], [25,5,1], [144,12,1]], dtype=float), 
+        np.array([1,1,3], dtype=float)
     )
     
     # Demonstrate generator usage
