@@ -51,7 +51,20 @@ class LU:
         self.scalers = scalers
        
         return scalers
-    
+    def pivoting(self, row):
+        index = row
+      
+        max_ratio = abs(self.array[row][row] / self.scalers[row])
+        for i in range(row+1,len(self.array)):
+            current_ratio = abs(self.array[i][row] / self.scalers[i])
+            if current_ratio > max_ratio:
+                max_ratio = current_ratio
+                index = i
+        if index != row:
+            self.array[[row, index]] = self.array[[index, row]]
+            self.scalers[row], self.scalers[index] = self.scalers[index], self.scalers[row]
+       
+        return self.array
     def get_U_generator(self):
         if self.solution_type == 'no solution':
             raise Exception("There is no solution")
@@ -62,14 +75,14 @@ class LU:
         arr = self.array.copy()
         rows = len(arr)
         
-        # Yield initial matrix
         yield  arr.copy()
         
         for k in range(rows):
-            # Check pivot
+   
+            arr=self.pivoting(k)
            
             
-            # Perform elimination
+ 
             for i in range(k + 1, rows):
                 factor = arr[i][k] / arr[k][k]
                 self.factors.append(factor)
@@ -79,7 +92,7 @@ class LU:
                 
                 yield arr.copy()
         
-        # Final U matrix
+
         self.U = arr.copy()
 
         yield self.U.copy()
@@ -106,7 +119,7 @@ class LU:
         rows = len(n)
         col = len(n[0])
         
-        # Initialize results
+  
         self.F_results[0] = n[0][col-1] / n[0][0]
     
         for i in range(1, len(n)):
@@ -143,11 +156,11 @@ class LU:
         rows = len(n)
         col = len(n[0])
         
-        # Compute last solution
+    
         self.results[rows-1] = n[rows-1][col-1] / n[rows-1][rows-1]
         
         
-        # Compute remaining solutions
+        
         for i in range(rows-2, -1, -1):
             sum_val = 0
             for j in range(i+1, rows):
@@ -174,6 +187,7 @@ class LU:
         U=0
         F_res=0
         results=0
+       
         for step in self.get_U_generator():
             print(step)
             U=step
@@ -189,6 +203,7 @@ class LU:
         
 
 def main():
-    m1=LU(np.array([[25,5,1],[64,8,1],[144,12,1]],dtype=float),np.array([1,2,3],dtype=float))
+    m1=LU(np.array([[0,2,5],[2,1,1],[3,1,0]],dtype=float),np.array([1,1,2],dtype=float))
+    print(m1.solution_type)
     print(m1.getfinal())
 main()  
