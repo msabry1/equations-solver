@@ -5,16 +5,26 @@ def relativeError(x1,x2):
     return abs((x2-x1)/x2)
 def check_validity(x):
     return  x == sp.zoo or not x.is_real or not x.is_finite
-def Bisection(equ,a,b,precision=5,tol=1e-10,mx_iter=15):
+def Bisection(equ,a,b,precision=5,tol=1e-2,mx_iter=50):
     a=sp.N(a,precision)
     b=sp.N(b,precision)
-    
+    iter=mx_iter
     x=sp.symbols('x')
     if(equ.subs(x,a)==0):
-        yield[a,"no relative error"]
+        yield {
+            "iteration":0,
+            "oldRoot":"none",
+            "newRoot":a,
+            "relativeError":"no relative error"
+        }
         return
     if(equ.subs(x,b)==0):
-        yield[b,"no relative error"]   
+        yield {
+            "iteration":0,
+            "oldRoot":"none",
+            "newRoot":b,
+            "relativeError":"no relative error"
+        }   
         return 
     if(equ.subs(x,a)>0):
         tmp=sp.N(b,precision)
@@ -22,31 +32,50 @@ def Bisection(equ,a,b,precision=5,tol=1e-10,mx_iter=15):
         a=tmp
         
     prev=0
-    print(a,b)
     if(check_validity(equ.subs(x,a)) or check_validity(equ.subs(x,b))):
         raise Exception("the function is not continuous at the given range")
-    while mx_iter>0:
-        mx_iter-=1
+    while iter>0:
+        iter-=1
         mid=(b+a)/2
         if(check_validity(equ.subs(x,mid))):
             raise Exception("the function is not continuous at the given range")
-        print(mid)
         if(equ.subs(x,a)*equ.subs(x,b)>1):
             raise Exception("this equation cannot be solved by the Bisection method")
         if(equ.subs(x,mid)==0):
-            yield[mid,relativeError(mid,prev)]
+            yield {
+            "iteration":mx_iter-iter,
+            "oldRoot":prev,
+            "newRoot":mid,
+            "relativeError":relative
+            }
             break
         if(equ.subs(x,mid)>0):
             b=mid
         else:
             a=mid
-        if(relativeError(prev,mid)<tol):
-            break    
         relative=relativeError(mid,prev)
         if relative==17.1717:
             relative="no relative error"
-        yield [mid,relative]
+        iteration=mx_iter-iter 
+        yield {
+            "iteration":iteration,
+            "oldRoot":prev,
+            "newRoot":mid,
+            "relativeError":relative
+            }
+        if(relativeError(prev,mid)<tol):
+            break    
         prev =mid
+    if mx_iter==0:
+        raise Exception("method didn't converge")      
+def final_result(equ,a,b,precision=5,tol=1e-10,mx_iter=50):
+    generator=Bisection(equ,a,b,precision,tol,mx_iter)
+    finalResult=0
+    for step in generator:
+        [a,b]=step
+        final_result=a
+    return final_result    
+
 
 def main():
     x=sp.symbols('x')
@@ -55,5 +84,10 @@ def main():
     g=equation-x
     generator=Bisection(g,-2,5)
     for i in generator:
-        print(i)
+        print(i["iteration"])
+        print(i["oldRoot"])
+        print(i["newRoot"])
+        print(i["relativeError"])
+        print("--------------------------------") 
+       
 main()  

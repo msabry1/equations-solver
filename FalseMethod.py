@@ -9,7 +9,8 @@ def FormulaCalc(equ,a,b,x):
    fa=equ.subs(x,a)
    fb=equ.subs(x,b)
    return (a*fb-b*fa)/(fb-fa)
-def FalsePosMethod(equ,a,b,precision=5,tol=1e-10,mx_iter=15):
+def FalsePosMethod(equ,a,b,precision=5,tol=1e-4,mx_iter=50):
+    iter=mx_iter
     a=sp.N(a,precision)
     b=sp.N(b,precision)
     
@@ -29,31 +30,50 @@ def FalsePosMethod(equ,a,b,precision=5,tol=1e-10,mx_iter=15):
 
     if(check_validity(equ.subs(x,a)) or check_validity(equ.subs(x,b))):
         raise Exception("the function is not continuous at the given range")
-    while mx_iter>0:
-        mx_iter-=1
+    while iter>=0:
+        iter-=1
         mid=FormulaCalc(equ,a,b,x)
         if(check_validity(equ.subs(x,mid))):
             raise Exception("the function is not continuous at the given range")
-        print(mid)
+        
         if(equ.subs(x,a)*equ.subs(x,b)>1):
             raise Exception("this equation cannot be solved by the False Position method")
         if(equ.subs(x,mid)==0):
-            relative=relativeError(mid,prev)
+            relative=sp.N(relativeError(mid,prev),precision)
             if relative==17:
                 relative="no relative error"
-            yield [mid,relative]
+            yield {
+            "iteration":mx_iter-iter,
+            "oldRoot":prev,
+            "newRoot":mid,
+            "relativeError":relative
+            }
             break
         if(equ.subs(x,mid)>0):
             b=mid
         else:
             a=mid
-        if(relativeError(prev,mid)<tol):
-            break    
         relative=relativeError(mid,prev)
         if relative==17:
             relative="no relative error"
-        yield [mid,relative]
+        yield {
+            "iteration":mx_iter-iter,
+            "oldRoot":prev,
+            "newRoot":mid,
+            "relativeError":relative
+            }
+        if(relativeError(prev,mid)<tol):
+            break    
         prev =mid
+    if mx_iter==0:
+        raise Exception("method didn't converge")      
+def final_result(equ,a,b,precision=5,tol=1e-10,mx_iter=50):
+    generator=FalsePosMethod(equ,a,b,precision,tol,mx_iter)
+    finalResult=0
+    for step in generator:
+        [a,b]=step
+        finalResult=a
+    return finalResult          
 def main():
     x=sp.symbols('x')
     precision=5
@@ -61,5 +81,11 @@ def main():
     g=equation-x
     generator=FalsePosMethod(g,-2,5)
     for i in generator:
-        print(i)
+        print(i["iteration"])
+        print(i["oldRoot"])
+        print(i["newRoot"])
+        print(i["relativeError"])
+        print("--------------------------------")
+
+     
 main()  
